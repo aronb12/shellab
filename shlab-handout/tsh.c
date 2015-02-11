@@ -174,6 +174,23 @@ int main(int argc, char **argv)
  */
 void eval(char *cmdline) 
 {
+    char *argv[MAXARGS];
+    int bg = parseline(cmdline, argv);
+
+    if(!argv[0])
+        return;
+    if(!builtin_cmd(argv)) {
+        if(fork() == 0) {
+            if(execv(argv[0], argv) < 0)  {
+                printf("\"%s\" is not a command\n", argv[0]);
+                exit(0);
+            }
+        }
+        if(!bg) {
+            wait(NULL);
+        }
+    }
+
     return;
 }
 
@@ -243,6 +260,9 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv) 
 {
+    if(!strcmp("quit", argv[0])) {
+        exit(0);
+    }
     return 0;     /* not a builtin command */
 }
 
