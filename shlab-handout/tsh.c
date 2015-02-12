@@ -6,7 +6,7 @@
  * === User information ===
  * Group: Team Rocket
  * User 1: arona12
- * SSN: 
+ * SSN: 2106844339
  * User 2: sveinnt12
  * SSN: 2803872909
  * === End User Information ===
@@ -71,6 +71,9 @@ void waitfg(pid_t pid);
 void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
+
+int last_suspended(struct job_t *jobs);
+void stop_job(struct job_t *jobs, pid_t pid);
 
 /* Here are helper routines that we've provided for you */
 int parseline(const char *cmdline, char **argv); 
@@ -300,6 +303,13 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv) 
 {
+	/*
+	 *	Find the last suspended process
+	 *	Restart the last suspended process(send SIGCONT ??)
+	 *	
+	 *	IF fg:
+	 *		finish by calling waitfg
+	 */
     printf("the do_bgfg function has been called\n");
     return;
 }
@@ -349,13 +359,16 @@ void sigint_handler(int sig)
 	// retrieve the pid of the foreground process
 	pid_t fg_proc = fgpid(jobs);
 
-	// pass the SIGINT signal to that motherfucer
+	// if a foreground process was found
+	if(fg_proc > 0){
 
-	Kill(fg_proc * -1, SIGINT);
-	printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(fg_proc), fg_proc, sig);
-	
-	// remove that motherfucker from the jobs array
-	deletejob(jobs, fg_proc);
+		// pass the SIGINT signal to process group
+		Kill(fg_proc * -1, SIGINT);
+		printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(fg_proc), fg_proc, sig);
+		
+		// remove that process from the jobs array
+		deletejob(jobs, fg_proc);
+	}
 
 	return;
 }
@@ -367,6 +380,20 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig) 
 {
+	// retrieve the pid of the foreground process
+	pid_t fg_proc = fgpid(jobs);
+
+	// if a foreground process was found
+	if(fg_proc > 0){
+
+		// pass the SIGTSTP signal to the process group
+		Kill(fg_proc * -1, SIGTSTP);
+		printf("Job [%d] (%d) suspended by signal %d\n", pid2jid(fg_proc), fg_proc, sig);
+		
+		// set the job as stopped
+		stop_job(jobs, fg_proc);
+	}
+
 	return;
 }
 
@@ -467,6 +494,36 @@ pid_t fgpid(struct job_t *jobs) {
 		}
 	}
 	return 0;
+}
+
+/* last_suspended - Return PID of the last job to be suspended, 0 if no such job */
+pid_t last_suspended(struct job_t *jobs){
+	int i;
+	int highest_jid = -1;
+	pid_t result = 0;
+
+	// last suspended will be the job with state=ST and highest jid
+	for (i = 0; i < MAXJOBS; i += 1){
+
+		if(jobs[i].state == ST){
+
+			if(jobs[i].jid > highest_jid){
+				highest_jid = jobs[i].jid;
+				result = jobs[i].pid;
+			}
+		}
+	}
+
+	return result;
+}
+
+/* stop_job  - Set the state of a job with job.pid == pid as ST */
+void stop_job(struct job_t *jobs, pid_t pid){
+	struct job_t * job = getjobpid(jobs, pid);
+
+	if(job != NULL){
+		job->state = ST;
+	}
 }
 
 /* getjobpid  - Find a job (by PID) on the job list */
