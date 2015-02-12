@@ -176,18 +176,24 @@ void eval(char *cmdline)
 {
     char *argv[MAXARGS];
     int bg = parseline(cmdline, argv);
+    pid_t pid;
 
     if(!argv[0])
         return;
     if(!builtin_cmd(argv)) {
-        if(fork() == 0) {
+        if((pid = fork()) == 0) {
+            // child
             if(execv(argv[0], argv) < 0)  {
-                printf("\"%s\" is not a command\n", argv[0]);
+                printf("%s: Command not found\n", argv[0]);
                 exit(0);
             }
         }
-        if(!bg) {
-            wait(NULL);
+        addjob(jobs, pid, bg ? BG : FG, cmdline);
+        if(bg) {    /*is a background process*/
+            printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
+        }
+        else {  
+            waitfg(pid);
         }
     }
 
@@ -260,8 +266,16 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv) 
 {
-    if(!strcmp("quit", argv[0])) {
+    if(strcmp("quit", argv[0]) == 0) {
         exit(0);
+    }
+    else if(strcmp("jobs", argv[0]) == 0) {
+        listjobs(jobs);
+        return 1;
+    }
+    else if(strcmp("bg", argv[0]) == 0 || strcmp("fg", argv[0]) == 0 ) {
+        do_bgfg(argv);
+        return 1;
     }
     return 0;     /* not a builtin command */
 }
@@ -271,6 +285,7 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv) 
 {
+    printf("the do_bgfg function has been called\n");
     return;
 }
 
@@ -279,6 +294,9 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
+    while(pid == fgpid(jobs)) {
+        sleep(1);
+    }
     return;
 }
 
@@ -295,6 +313,12 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig) 
 {
+    pid_t pid;
+    int status;
+
+    while((pid = waitpid(-1, &status, WNOHANG|WUNTRACED)) > 0) {
+        deletejob(jobs, pid);
+    }
     return;
 }
 
