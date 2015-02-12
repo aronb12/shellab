@@ -188,9 +188,15 @@ void eval(char *cmdline)
         return;
 
     if(!builtin_cmd(argv)) {
+
+    	// fork a child process
         if((pid = Fork()) == 0) {
-            // child
-            if(execv(argv[0], argv) < 0)  {
+
+            // child should belong in its own process group
+        	setpgid(0, 0);
+
+        	// attempt to run the command
+            if(execvp(argv[0], argv) < 0)  {
                 printf("%s: Command not found\n", argv[0]);
                 exit(0);
             }
@@ -344,7 +350,8 @@ void sigint_handler(int sig)
 	pid_t fg_proc = fgpid(jobs);
 
 	// pass the SIGINT signal to that motherfucer
-	Kill(fg_proc, SIGINT);
+
+	Kill(fg_proc * -1, SIGINT);
 	printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(fg_proc), fg_proc, sig);
 	
 	// remove that motherfucker from the jobs array
