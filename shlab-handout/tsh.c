@@ -4,11 +4,11 @@
  * You __MUST__ add your user information here below
  * 
  * === User information ===
- * Group: NONE
- * User 1: dude13
- * SSN: 1807825919
- * User 2: 
- * SSN: X
+ * Group: Team Rocket
+ * User 1: arona12
+ * SSN: 
+ * User 2: sveinnt12
+ * SSN: 2803872909
  * === End User Information ===
  */
 #include <stdio.h>
@@ -345,7 +345,8 @@ void sigint_handler(int sig)
 
 	// pass the SIGINT signal to that motherfucer
 	Kill(fg_proc, SIGINT);
-
+	printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(fg_proc), fg_proc, sig);
+	
 	// remove that motherfucker from the jobs array
 	deletejob(jobs, fg_proc);
 
