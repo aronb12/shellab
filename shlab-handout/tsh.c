@@ -177,16 +177,35 @@ int main(int argc, char **argv)
 void eval(char *cmdline) 
 {
 	// string pointer array that holds pointers to our argument values 
-	char *argv[MAXARGS];
+    char *argv[MAXARGS];
 
 	// call to parseline to populate our argument array and determine if
 	// our command job should be run in the background 
-	int bg = parseline(cmdline, argv);
+    int bg = parseline(cmdline, argv);
+    pid_t pid;
 
-	job_t job;
+    if(!argv[0])
+        return;
 
+    if(!builtin_cmd(argv)) {
+        if((pid = Fork()) == 0) {
+            // child
+            if(execv(argv[0], argv) < 0)  {
+                printf("%s: Command not found\n", argv[0]);
+                exit(0);
+            }
+        }
+        addjob(jobs, pid, bg ? BG : FG, cmdline);
 
-	return;
+        if(bg) {    /*is a background process*/
+            printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
+        }
+        else {  
+            waitfg(pid);
+        }
+    }
+
+    return;
 }
 
 /* 
@@ -256,7 +275,18 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv) 
 {
-	return 0;     /* not a builtin command */
+    if(strcmp("quit", argv[0]) == 0) {
+        exit(0);
+    }
+    else if(strcmp("jobs", argv[0]) == 0) {
+        listjobs(jobs);
+        return 1;
+    }
+    else if(strcmp("bg", argv[0]) == 0 || strcmp("fg", argv[0]) == 0 ) {
+        do_bgfg(argv);
+        return 1;
+    }
+    return 0;     /* not a builtin command */
 }
 
 /* 
@@ -264,7 +294,8 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv) 
 {
-	return;
+    printf("the do_bgfg function has been called\n");
+    return;
 }
 
 /* 
@@ -272,7 +303,10 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
-	return;
+    while(pid == fgpid(jobs)) {
+        sleep(1);
+    }
+    return;
 }
 
 /*****************
@@ -292,7 +326,7 @@ void sigchld_handler(int sig)
 	pid_t reaped;
 
 	// while there is a terminated job to be reaped
-	while((reaped = waitpid(-1, NULL, WNOHANG)) > 0){
+	while((reaped = waitpid(-1, NULL, WNOHANG|WUNTRACED)) > 0){
 		// remove the job from the jobs array
 		deletejob(jobs, reaped);
 	}
