@@ -1,0 +1,345 @@
+./sdriver.pl -t trace12.txt -s ./tshref -a "-p"
+#
+# trace12.txt - Forward SIGTSTP to every process in foreground process group
+#
+tsh> ./mysplit 4
+Job [1] (27853) stopped by signal 20
+tsh> jobs
+[1] (27853) Stopped ./mysplit 4 
+tsh> /bin/ps a
+  PID TTY      STAT   TIME COMMAND
+  507 pts/51   T      0:13 emacs tsh.c
+  550 pts/247  S      0:00 ./tsh -p
+  555 pts/247  T      0:00 ./myspin 4
+  791 tty1     Ss+    0:00 /sbin/agetty --noclear tty1
+  839 pts/108  S+     0:01 vim tsh.c
+  852 pts/17   Ss     0:00 -zsh
+  912 pts/48   Ss+    0:00 -zsh
+ 1200 pts/85   S      0:00 ./tsh -p
+ 1207 pts/228  Ss+    0:00 -zsh
+ 1354 pts/56   Ss     0:00 -zsh
+ 1505 pts/102  Ts     0:00 -zsh
+ 1721 pts/12   Ss+    0:00 /bin/zsh
+ 1750 pts/56   S+     0:00 gdb bufbomb
+ 1772 pts/186  Ss     0:00 /bin/zsh
+ 1798 pts/294  Ss+    0:00 -zsh
+ 1947 pts/115  Ss     0:00 -zsh
+ 1983 pts/24   S+     0:00 gdb bufbomb
+ 2216 pts/10   S+     0:01 nano tsh.c
+ 2285 pts/11   Ss+    0:01 -zsh
+ 2293 pts/165  S+     0:02 vim tsh.c
+ 2296 pts/28   S+     0:00 vim tsh.c
+ 2491 pts/85   S      0:00 ./tsh -p
+ 2630 pts/180  Ss+    0:00 -zsh
+ 2689 pts/8    S+     0:18 vim tsh.c
+ 2761 pts/193  Ss+    0:00 -zsh
+ 2909 pts/28   Ss     0:00 -zsh
+ 2978 pts/164  S+     0:09 emacs tsh.c
+ 3163 pts/85   S      0:00 ./tsh -p
+ 3383 pts/161  Ss+    0:02 -zsh
+ 3408 pts/75   Ss     0:00 -zsh
+ 3724 pts/62   Ss     0:00 /bin/zsh
+ 3822 pts/89   Ss+    0:00 -zsh
+ 3856 pts/91   Ss+    0:00 -zsh
+ 3955 pts/96   Ss+    0:01 -zsh
+ 3957 pts/102  T      0:00 make test10
+ 3961 pts/102  T      0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+ 3966 pts/102  T      0:14 ./tsh -p
+ 3972 pts/102  T      0:00 ./myspin 4
+ 4005 pts/27   Ss+    0:00 -zsh
+ 4052 pts/186  S+     0:00 tmux
+ 4055 pts/194  Ss+    0:00 -zsh
+ 4069 pts/15   Ss     0:00 -zsh
+ 4163 pts/188  Ss+    0:00 -zsh
+ 4461 pts/1    S+     2:01 vim .
+ 4503 pts/64   S+     0:00 vim tsh.c
+ 4656 pts/102  T      0:00 make test10
+ 4658 pts/102  T      0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+ 4665 pts/102  T      0:11 ./tsh -p
+ 4674 pts/102  T      0:00 ./myspin 4
+ 4766 pts/101  Ss+    0:00 -zsh
+ 4997 pts/85   S+     0:00 nano tsh.c
+ 5101 pts/195  Ss     0:00 /bin/zsh
+ 5301 pts/102  T      0:00 make test10
+ 5303 pts/102  T      0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+ 5307 pts/102  T      0:07 ./tsh -p
+ 5313 pts/102  T      0:00 ./myspin 4
+ 5360 pts/165  S      0:00 ./tsh -p
+ 5365 pts/165  T      0:00 ./myspin 4
+ 5424 pts/90   S+     0:00 vim exploitlvl5.txt
+ 5524 pts/72   Ss+    0:00 -zsh
+ 5575 pts/102  T      0:00 make test10
+ 5578 pts/102  T      0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+ 5583 pts/102  T      0:06 ./tsh -p
+ 5593 pts/102  T      0:00 ./myspin 4
+ 5653 pts/171  Ss+    0:00 -zsh
+ 5877 pts/66   Ss+    0:00 -zsh
+ 5911 pts/110  Ss+    0:02 -zsh
+ 5953 pts/162  Ss+    0:01 -zsh
+ 6169 pts/178  Ss     0:00 -zsh
+ 6246 pts/149  Ss     0:02 -zsh
+ 6279 pts/46   Ss     0:01 -zsh
+ 6363 pts/45   S+     0:00 /bin/bash ./question3.sh
+ 6401 pts/195  S+    85:54 htop
+ 6407 pts/102  T+     0:00 make test10
+ 6408 pts/102  T+     0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+ 6411 pts/102  T+     0:00 ./tsh -p
+ 6416 pts/102  T      0:00 ./myspin 4
+ 6468 pts/156  S+     0:00 gdb bufbomb
+ 6547 pts/51   T      0:00 emacs tsh.c
+ 6685 pts/103  Ss+    0:00 -zsh
+ 6703 pts/9    Ss     0:01 -zsh
+ 6706 pts/99   Ss+    0:02 -zsh
+ 7328 pts/118  Ss     0:00 -zsh
+ 7358 pts/187  Ss+    0:00 -zsh
+ 7555 pts/17   S+     0:00 nano tsh.c
+ 7599 pts/176  Ss+    0:00 -zsh
+ 7620 pts/105  Ss+    0:00 -zsh
+ 7712 pts/134  Ss+    0:00 -zsh
+ 7943 pts/218  Ss+    0:00 -zsh
+ 8065 pts/52   S+     0:00 tmux a
+ 8411 pts/247  S      0:00 ./tsh -p
+ 8417 pts/247  T      0:00 ./myspin 4
+ 8419 pts/51   T      0:00 ps auxf
+ 8421 pts/51   T      0:00 less
+ 8564 pts/73   Ss+    0:00 -zsh
+ 8615 pts/94   Ss     0:00 /bin/zsh
+ 8657 pts/107  Ss+    0:06 /bin/zsh
+ 8928 pts/200  Ss+    0:02 -zsh
+ 9103 pts/51   T      0:02 emacs tsh.c
+ 9244 pts/15   S+     0:00 /bin/bash ./question2.sh
+ 9631 pts/113  Ss+    0:02 -zsh
+ 9702 pts/191  S+     0:01 nano tsh.c
+ 9865 pts/219  Ss     0:00 -zsh
+ 9897 pts/70   S+     0:00 vim answer3.2.txt
+10083 pts/247  S+     0:00 make test10
+10086 pts/247  S+     0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+10125 pts/247  S+     0:00 ./tsh -p
+10129 pts/247  T      0:00 ./myspin 4
+10143 pts/80   Ss     0:00 -zsh
+10180 pts/81   Ss+    0:00 -zsh
+10188 pts/36   Ss+    0:00 -zsh
+10191 pts/51   T      0:03 emacs tsh.c
+10530 pts/98   Ss+    0:00 -zsh
+10564 pts/112  Ss+    0:01 -zsh
+10627 pts/163  Ss+    0:00 -zsh
+10775 pts/37   Ss     0:00 -zsh
+10799 pts/136  S+     1:05 vim tsh.c
+11219 pts/227  Ts     0:00 -zsh
+11260 pts/178  S+     0:02 vim tsh.c
+11369 pts/26   Ss     0:00 -zsh
+11370 pts/92   Ss+    0:00 -zsh
+11578 pts/151  t      0:00 /home/hir.is/tomasn13/buflab-handout/bufbomb getbuf -u tomasn13
+11689 pts/42   Ss+    0:01 -zsh
+11793 pts/227  T+     0:00 make test10
+11794 pts/227  T+     0:00 /usr/bin/perl ./sdriver.pl -t trace10.txt -s ./tsh -a -p
+11796 pts/227  Z+     0:00 [tsh] <defunct>
+11837 pts/45   S+     0:00 /bin/bash ./question3.2.sh
+11861 pts/45   S+     0:00 vim ../answers/answer3.2.txt
+11938 pts/131  Ss+    0:00 -zsh
+11973 pts/31   Ss+    0:00 -zsh
+12009 pts/34   Ss+    0:00 -zsh
+12113 pts/136  Ss     0:00 -zsh
+12222 pts/86   Ss+    0:00 -zsh
+12232 pts/74   Ss+    0:00 -zsh
+12270 pts/13   S+     0:01 gdb bufbomb
+12505 pts/13   t      0:00 /home/hir.is/hogni10/buflab/buflab-handout/bufbomb -u hogni10
+12524 pts/80   S+     0:00 gdb bufbomb
+12563 pts/88   S+     0:00 gdb bufbomb
+12749 pts/115  S+     0:00 vim tsh.c
+12770 pts/240  S+     0:00 tmux a
+12936 pts/37   t      0:00 /home/hir.is/hogni10/buflab/buflab-handout/bufbomb -u hogni10
+12939 pts/219  S+     0:00 gdb bufbomb
+13161 pts/6    Ss+    0:00 -zsh
+13240 pts/177  Ss     0:00 -zsh
+13259 pts/0    Ss+    0:00 -zsh
+13322 pts/148  S+     0:00 vim sploit
+13323 pts/88   t      0:00 /home/hir.is/hogni10/buflab/buflab-handout/bufbomb -b -u hogni10
+13391 pts/68   S+     0:00 vim test4.txt
+13587 pts/5    Ss+    0:01 -zsh
+13637 pts/202  S+     0:02 vim tsh.c
+13742 pts/18   Ss+    0:00 -zsh
+13766 pts/20   Ss     0:01 -zsh
+13784 pts/246  Ss+    0:00 -zsh
+13938 pts/87   Ss+    0:00 -zsh
+14328 pts/118  S+     0:08 nano tsh.c
+14372 pts/226  Ss+    0:01 -zsh
+14646 pts/109  Ss     0:01 -zsh
+14757 pts/30   Ss+    0:00 -zsh
+15163 pts/209  Ss+    0:03 -zsh
+15226 pts/85   S      0:00 ./tsh -p
+15235 pts/249  Ss+    0:00 -zsh
+15241 pts/168  Ss     0:00 -zsh
+15303 pts/175  T      0:00 make test16
+15305 pts/175  T      0:00 /usr/bin/perl ./sdriver.pl -t trace16.txt -s ./tsh -a -p
+15344 pts/175  Z      0:00 [tsh] <defunct>
+15372 pts/9    S+     0:00 vim tsh.c
+15658 pts/173  T      0:03 vim main.c
+15786 pts/147  Ss+    0:00 -zsh
+15801 pts/156  t      0:00 /home/hir.is/tomasn13/buflab-handout/bufbomb -u tomasn13
+15966 pts/49   Ss+    0:00 -zsh
+15992 pts/177  S+     0:00 vim tsh.c
+15999 pts/55   Ss+    0:00 -zsh
+16009 pts/192  Ss     0:00 -zsh
+16086 pts/22   S+     0:00 vim answer1.txt
+16333 pts/109  S+     0:00 nano tsh.c
+16719 pts/40   S+     0:00 /bin/bash ./question1.sh
+16777 pts/40   S+     0:00 vi ../answers/answer1.txt
+16844 pts/192  S+    43:41 htop
+16879 pts/111  Ss+    0:00 -zsh
+17277 pts/84   Ss     0:00 -zsh
+17360 pts/37   S+     0:00 gdb -quiet bufbomb
+17375 pts/168  S+     0:00 vim tsh.c
+17472 pts/24   Ss     0:00 -zsh
+17527 pts/143  Ss     0:00 /bin/zsh
+17547 pts/117  Ss     0:00 /bin/zsh
+17556 pts/64   Ss     0:00 -zsh
+17587 pts/117  S+     0:00 tmux
+17590 pts/148  Ss     0:00 -zsh
+17596 pts/43   Ss+    0:00 -zsh
+17604 pts/51   T      0:00 less
+17637 pts/61   Ss+    0:00 /bin/zsh
+17776 pts/146  S+     0:00 gdb bufbomb
+17967 pts/70   Ss     0:01 -zsh
+18185 pts/75   S+     0:00 emacs tsh.c
+18259 pts/65   Ss+    0:00 -zsh
+18278 pts/26   T      0:00 make test16
+18282 pts/26   Z      0:00 [sdriver.pl] <defunct>
+18490 pts/172  Ss+    0:00 -zsh
+18500 pts/143  S+     1:04 vim tsh.c
+18533 pts/155  Ss+    0:00 -zsh
+18731 pts/151  S+     0:00 gdb bufbomb
+18801 pts/50   Ss+    0:00 /bin/zsh
+19134 pts/82   Ss+    0:00 -zsh
+19151 pts/123  Ss+    0:00 -zsh
+19202 pts/51   Ss+    0:00 -zsh
+19395 pts/164  T      0:03 emacs tsh.c
+19628 pts/139  Ss+    0:01 -zsh
+19643 pts/78   S+     0:00 ./tsh
+19730 pts/189  Ss     0:00 -zsh
+19768 pts/14   Ss+    0:00 -zsh
+19840 pts/1    Ss     0:00 -zsh
+19912 pts/198  Ss+    0:01 -zsh
+20180 pts/124  Ss+    0:01 -zsh
+20282 pts/78   Ss     0:00 -zsh
+20352 pts/25   S+     0:00 vim tsh.c
+20514 pts/179  Ss     0:00 -zsh
+20951 pts/144  S+     0:00 /bin/bash ./question3.2.sh
+20973 pts/97   Ss+    0:00 -zsh
+20980 pts/144  S+     0:00 nano ../answers/answer3.2.txt
+21028 pts/142  Ss+    0:00 -zsh
+21093 pts/146  Ss     0:00 -zsh
+21101 pts/2    Ss+    0:00 -zsh
+21338 pts/159  Ss+    0:00 -zsh
+21511 pts/68   Ss     0:00 -zsh
+21650 pts/10   Ss     0:00 -zsh
+21683 pts/88   Ss     0:00 -zsh
+21728 pts/90   Ss     0:00 -zsh
+21867 pts/222  Ss+    0:01 -zsh
+21960 pts/226  S      0:00 git-credential-cache--daemon /home/hir.is/d12/.git-credential-cache/socket
+22050 pts/4    S+     0:00 vim tsh.c
+22254 pts/174  Ss     0:00 -zsh
+22362 pts/217  Ss     0:00 -zsh
+22675 pts/247  S      0:00 ./tsh -p
+22679 pts/247  T      0:00 ./myspin 4
+22683 pts/175  Ss+    0:00 -zsh
+22693 pts/127  Ss+    0:00 -zsh
+22795 pts/211  Ss+    0:01 -zsh
+22839 pts/217  S+     0:00 vim tsh.c
+22894 pts/32   Ss+    0:00 -zsh
+22977 pts/95   S+     0:00 sleep 60
+23003 pts/181  Ss+    0:00 /bin/zsh
+23518 pts/113  TN     0:00 vim
+23618 pts/247  Ss     0:01 -zsh
+23686 pts/128  Ss+    0:00 -zsh
+24081 pts/157  S+     0:00 tmux
+24144 pts/165  Ss     0:00 -zsh
+24219 pts/26   S+     0:00 tmux
+24229 pts/57   Ss+    0:00 -zsh
+24327 pts/257  Ss     0:02 -zsh
+24371 pts/119  S+     0:00 git diff 9ff1..HEAD
+24372 pts/119  S+     0:00 less
+24473 pts/179  S+     0:00 gdb bufbomb
+24663 pts/62   S+     0:00 vim tsh.c
+24692 pts/94   S+     0:01 gdb bufbomb
+25009 pts/95   Ss     0:03 -zsh
+25013 pts/106  Ss+    0:00 /bin/zsh
+25135 pts/19   S+     0:00 /bin/bash ./diff.sh 16
+25238 pts/19   S+     0:00 vimdiff rtits.txt tits.txt
+25262 pts/191  Ss     0:00 -zsh
+25323 pts/144  Ss     0:00 -zsh
+25368 pts/67   Ss+    0:00 -zsh
+25373 pts/100  Ss+    0:00 -zsh
+25386 pts/13   Ss     0:00 -zsh
+25412 pts/151  Ss     0:00 -zsh
+25446 pts/59   Ss     0:01 -zsh
+25448 pts/44   Ss+    0:00 -zsh
+25496 pts/160  Ss+    0:01 -zsh
+26166 pts/189  S+    34:09 htop
+26206 pts/237  Ss+    0:00 -zsh
+26275 pts/145  Ss+    0:00 -zsh
+26350 pts/84   S+     0:00 vim tsh.c
+26375 pts/33   Ss+    0:01 -zsh
+26704 pts/130  Ss+    0:00 -zsh
+26947 pts/35   Ss+    0:01 -zsh
+27217 pts/85   S      0:00 ./tsh -p
+27252 pts/63   Ss+    0:01 -zsh
+27420 pts/15   S+     0:00 make answers
+27424 pts/15   S+     0:00 /bin/sh -c cd questions; ./questions.sh
+27429 pts/15   S+     0:00 /bin/bash ./questions.sh
+27576 pts/46   S+     0:00 vimdiff file1 file2
+27697 pts/20   S+     0:00 less tsh.c
+27802 pts/173  S+     0:00 make rtest12
+27806 pts/173  S+     0:00 /usr/bin/perl ./sdriver.pl -t trace12.txt -s ./tshref -a -p
+27832 pts/225  Ss+    0:00 -zsh
+27848 pts/173  S+     0:00 ./tshref -p
+27853 pts/173  T      0:00 ./mysplit 4
+27854 pts/173  T      0:00 ./mysplit 4
+28080 pts/119  Ss     0:01 -zsh
+28206 pts/165  S      0:00 ./tsh -p
+28211 pts/165  T      0:00 ./myspin 4
+28354 pts/76   Ss+    0:00 -zsh
+28404 pts/238  Ss+    0:00 -zsh
+28436 pts/52   Ss     0:00 -zsh
+28474 pts/25   Ss     0:00 -zsh
+28483 pts/40   Ss     0:01 -zsh
+28642 pts/39   Ss+    0:02 -zsh
+28664 pts/108  Ss     0:03 -zsh
+28711 pts/202  Ss     0:00 -zsh
+29012 pts/141  Ss+    0:00 -zsh
+29044 pts/157  Ss     0:00 /bin/zsh
+29159 pts/8    Ss     0:00 -zsh
+29442 pts/170  Ss+    0:00 -zsh
+29471 pts/59   S+     0:00 vim pproblem8.4.c
+29536 pts/164  Ss     0:00 -zsh
+29730 pts/19   Ss     0:01 -zsh
+29963 pts/15   S+     0:00 /bin/bash ./question2.2.sh
+29992 pts/15   S+     0:00 vi ../answers/answer2.2.txt
+30019 pts/126  Ss+    0:00 -zsh
+30047 pts/173  R      0:00 /bin/ps a
+30335 pts/29   Ss+    0:00 -zsh
+30406 pts/16   Ss+    0:00 -zsh
+30473 pts/129  Ss+    0:00 -zsh
+30577 pts/47   Ss+    0:02 -zsh
+30664 pts/156  Ss     0:00 -zsh
+30967 pts/85   Ss     0:03 -zsh
+31020 pts/174  S+     0:00 gdb bufbomb
+31091 pts/69   Ss+    0:01 -zsh
+31170 pts/149  S+     0:00 vim tsh.c
+31393 pts/121  Ss+    0:00 -zsh
+31395 pts/270  Ss+    0:00 -zsh
+31486 pts/133  Ss     0:00 -zsh
+31533 pts/45   Ss     0:00 -zsh
+31594 pts/24   t      0:00 /home/hir.is/hogni10/buflab/buflab-handout/bufbomb -u hogni10
+31598 pts/85   Z      0:00 [myspin] <defunct>
+31601 pts/85   Z      0:00 [myspin] <defunct>
+31622 pts/257  S+    39:01 htop -u sveinndb11
+31985 pts/240  Ss     0:00 -zsh
+31989 pts/45   S+     0:00 /bin/bash ./questions.sh
+32020 pts/133  S+     0:00 vim tsh.c
+32148 pts/22   Ss     0:00 -zsh
+32254 pts/173  Ss     0:03 -zsh
+32265 pts/138  Ss+    0:00 -zsh
+32553 pts/207  Ss+    0:00 -zsh
+32644 pts/4    Ss     0:00 -zsh
+32649 pts/51   T      0:21 emacs tsh.c

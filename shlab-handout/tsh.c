@@ -72,8 +72,7 @@ void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
 void sigint_handler(int sig);
 
-int last_suspended(struct job_t *jobs);
-void stop_job(struct job_t *jobs, pid_t pid);
+int is_number(char *input);
 
 /* Here are helper routines that we've provided for you */
 int parseline(const char *cmdline, char **argv); 
@@ -303,51 +302,46 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv) 
 {
-	pid_t pid;	// process pid
-	int jid;	// process job id
+	int is_jid = 0;	// 1 if input is jid, otherwise 0
+	char *input;	// the second parameter(jid or pid)
 	struct job_t *job;	// pointer to the job struct if found
-	char *msg;	// string to add to error message if applicable
-	int state;	// the state the process should be run in
-    
-    listjobs(jobs);
+	char *msg = "process";	// string to add to error message if applicable
+	int state = BG;	// the state the process should be run in
 
 	// check if there is only one argument
 	if(argv[1] == NULL){
-		printf("%s command requires PID or %%jobid argument", argv[0]);
+		printf("%s command requires PID or %%jobid argument\n", argv[0]);
 		return;
 	}
 
-	// if the input was the process job id
-	if(argv[1][0] == '%'){
-		jid = atoi(argv[1] + 1);
+	// set input as the second parameter
+	input = argv[1];
 
-		job = getjobjid(jobs, jid);
+	// check if input was jid
+	if(input[0] == '%'){
+		input++; // increment past %
+		is_jid = 1;
 		msg = "job";
 	}
-	else{ // if input was process id
-		pid = atoi(argv[1]);
 
-		job = getjobpid(jobs, pid);
-		msg = "process";
+	// make sure input was a number
+	if(is_number(input) == 0){
+		printf("%s: argument must be a PID or %%jobid\n", argv[0]);
+		fflush(stdout);
+		return;
 	}
+
+	if(is_jid)	job = getjobjid(jobs, atoi(input));
+	else		job = getjobpid(jobs, atoi(input));
 
 	// if no job was found
 	if(job == NULL){
-		printf("%s: no such %s", argv[1], msg);
-
-
-        listjobs(jobs);
-
+		printf("%s: No such %s\n", argv[1], msg);
 		return;
 	}
 
 	// check if process should be run in the foreground
-	if(strcmp(argv[0], "fg") == 0){
-		state = FG;
-	}
-	else{
-		state = BG;
-	}
+	if(strcmp(argv[0], "fg") == 0) state = FG;
 
 	// set the job state as appropriate
 	job->state = state;
@@ -356,9 +350,8 @@ void do_bgfg(char **argv)
 	Kill(job->pid * -1, SIGCONT);
 
 	// check if we should wait for job to finish(foreground)
-	if(state == FG){
-		waitfg(job->pid);
-	}
+	if(state == FG) waitfg(job->pid);
+	else			printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
 
 	return;
 }
@@ -395,11 +388,20 @@ void sigchld_handler(int sig)
 	while((reaped = waitpid(-1, &status, WNOHANG|WUNTRACED)) > 0) {
 		/* Stop the process */
 		if(WIFSTOPPED(status)) {
+
+			printf("Job [%d] (%d) stopped by signal %d\n",
+					pid2jid(reaped), reaped, WSTOPSIG(status));
 			/* Get the job pid and set the state to stop */
 			getjobpid(jobs, reaped)->state = ST;
 		}
-		/* Delete the job if the process was terminated with another signal or if it terminated normally */
-		else if(WIFSIGNALED(status)|WIFEXITED(status)) {
+		/* Delete the job if the process was terminated */
+		else if(WIFSIGNALED(status)) {
+			printf("Job [%d] (%d) terminated by signal %d\n",
+					pid2jid(reaped), reaped, WTERMSIG(status));
+			deletejob(jobs, reaped);
+		}
+		/* Delete the job if the process exited normally */
+		else if(WIFEXITED(status)){
 			deletejob(jobs, reaped);
 		}
 	}
@@ -422,10 +424,11 @@ void sigint_handler(int sig)
 
 		// pass the SIGINT signal to process group
 		Kill(fg_proc * -1, SIGINT);
-		printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(fg_proc), fg_proc, sig);
+		// printf("Job [%d] (%d) terminated by signal %d\n",
+		// 		pid2jid(fg_proc), fg_proc, sig);
 		
 		// remove that process from the jobs array
-		deletejob(jobs, fg_proc);
+		// deletejob(jobs, fg_proc);
 	}
 
 	return;
@@ -447,12 +450,12 @@ void sigtstp_handler(int sig)
 		// pass the SIGTSTP signal to the process group
 		Kill(fg_proc * -1, SIGTSTP);
 
-		printf("Job [%d] (%d) suspended by signal %d\n",
-				pid2jid(fg_proc), fg_proc, sig);
+		// printf("Job [%d] (%d) stopped by signal %d\n",
+		// 		pid2jid(fg_proc), fg_proc, sig);
 		
-		// set the job state as ST(stopped)
-		struct job_t *job = getjobpid(jobs, fg_proc);
-		job->state = ST;
+		// // set the job state as ST(stopped)
+		// struct job_t *job = getjobpid(jobs, fg_proc);
+		// job->state = ST;
 	}
 
 	return;
@@ -465,6 +468,18 @@ void sigtstp_handler(int sig)
 /***********************************************
  * Helper routines that manipulate the job list
  **********************************************/
+
+/* is_number - returns 1 if input is a number, otherwise 0 */
+int is_number(char *input){
+	int i = 0;
+	while(input[i] != '\0'){
+		if(!isdigit(input[i]))
+			return 0;
+		i += 1;
+	}
+
+	return 1;
+}
 
 /* clearjob - Clear the entries in a job struct */
 void clearjob(struct job_t *job) {
@@ -555,15 +570,6 @@ pid_t fgpid(struct job_t *jobs) {
 		}
 	}
 	return 0;
-}
-
-/* stop_job  - Set the state of a job with job.pid == pid as ST */
-void stop_job(struct job_t *jobs, pid_t pid){
-	struct job_t * job = getjobpid(jobs, pid);
-
-	if(job != NULL){
-		job->state = ST;
-	}
 }
 
 /* getjobpid  - Find a job (by PID) on the job list */
