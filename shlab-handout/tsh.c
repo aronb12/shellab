@@ -308,8 +308,6 @@ void do_bgfg(char **argv)
 	struct job_t *job;	// pointer to the job struct if found
 	char *msg;	// string to add to error message if applicable
 	int state;	// the state the process should be run in
-    
-    listjobs(jobs);
 
 	// check if there is only one argument
 	if(argv[1] == NULL){
@@ -332,9 +330,6 @@ void do_bgfg(char **argv)
 	// if no job was found
 	if(job == NULL){
 		printf("%s: no such %s", argv[1], msg);
-
-        listjobs(jobs);
-
 		return;
 	}
 
