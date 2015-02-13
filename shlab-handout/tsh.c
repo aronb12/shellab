@@ -389,12 +389,21 @@ void sigchld_handler(int sig)
 {
 	// pid of a reaped child process
 	pid_t reaped;
+	int status;
 
 	// while there is a terminated job to be reaped
-	while((reaped = waitpid(-1, NULL, WNOHANG|WUNTRACED)) > 0){
-		// remove the job from the jobs array
-		deletejob(jobs, reaped);
+	while((reaped = waitpid(-1, &status, WNOHANG|WUNTRACED)) > 0) {
+		/* Stop the process */
+		if(WIFSTOPPED(status)) {
+			/* Get the job pid and set the state to stop */
+			getjobpid(jobs, reaped)->state = ST;
+		}
+		/* Delete the job if the process was terminated with another signal or if it terminated normally */
+		else if(WIFSIGNALED(status)|WIFEXITED(status)) {
+			deletejob(jobs, reaped);
+		}
 	}
+			
 	return;
 }
 
