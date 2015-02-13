@@ -303,15 +303,62 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv) 
 {
-	/*
-	 *	Find the last suspended process
-	 *	Restart the last suspended process(send SIGCONT ??)
-	 *	
-	 *	IF fg:
-	 *		finish by calling waitfg
-	 */
-    printf("the do_bgfg function has been called\n");
-    return;
+	pid_t pid;	// process pid
+	int jid;	// process job id
+	struct job_t *job;	// pointer to the job struct if found
+	char *msg;	// string to add to error message if applicable
+	int state;	// the state the process should be run in
+
+	// check if there is only one argument
+	if(argv[1] == NULL){
+		printf("%s command requires PID or %%jobid argument", argv[0]);
+		return;
+	}
+
+	// if the input was the process job id
+	if(argv[1][0] == '%'){
+		jid = atoi(argv[1] + 1);
+		// DEBUG
+		printf("\nJID: %d\n", jid);
+
+		job = getjobjid(jobs, jid);
+		msg = "job";
+	}
+	else{ // if input was process id
+		pid = atoi(argv[1]);
+		// DEBUG
+		printf("\nPID: %d\n", pid);
+
+		job = getjobpid(jobs, pid);
+		msg = "process";
+	}
+
+	// if no job was found
+	if(job == NULL){
+		printf("%s: no such %s", argv[1], msg);
+		return;
+	}
+
+	// check if process should be run in the foreground
+	if(strcmp(argv[0], "fg") == 0){
+		state = FG;
+	}
+	else{
+		state = BG;
+	}
+
+	// set the job state as appropriate
+	job->state = state;
+
+	// send a SIGCONT signal to the process group
+	Kill(job->pid * -1, SIGCONT);
+
+	// check if we should wait for job to finish(foreground)
+	if(state == FG){
+		waitfg(job->pid);
+	}
+
+	return;
 }
 
 /* 
@@ -388,7 +435,8 @@ void sigtstp_handler(int sig)
 
 		// pass the SIGTSTP signal to the process group
 		Kill(fg_proc * -1, SIGTSTP);
-		printf("Job [%d] (%d) suspended by signal %d\n", pid2jid(fg_proc), fg_proc, sig);
+		printf("Job [%d] (%d) suspended by signal %d\n",
+				pid2jid(fg_proc), fg_proc, sig);
 		
 		// set the job as stopped
 		stop_job(jobs, fg_proc);
@@ -494,27 +542,6 @@ pid_t fgpid(struct job_t *jobs) {
 		}
 	}
 	return 0;
-}
-
-/* last_suspended - Return PID of the last job to be suspended, 0 if no such job */
-pid_t last_suspended(struct job_t *jobs){
-	int i;
-	int highest_jid = -1;
-	pid_t result = 0;
-
-	// last suspended will be the job with state=ST and highest jid
-	for (i = 0; i < MAXJOBS; i += 1){
-
-		if(jobs[i].state == ST){
-
-			if(jobs[i].jid > highest_jid){
-				highest_jid = jobs[i].jid;
-				result = jobs[i].pid;
-			}
-		}
-	}
-
-	return result;
 }
 
 /* stop_job  - Set the state of a job with job.pid == pid as ST */
