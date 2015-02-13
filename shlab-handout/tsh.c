@@ -308,6 +308,8 @@ void do_bgfg(char **argv)
 	struct job_t *job;	// pointer to the job struct if found
 	char *msg;	// string to add to error message if applicable
 	int state;	// the state the process should be run in
+    
+    listjobs(jobs);
 
 	// check if there is only one argument
 	if(argv[1] == NULL){
@@ -330,6 +332,9 @@ void do_bgfg(char **argv)
 	// if no job was found
 	if(job == NULL){
 		printf("%s: no such %s", argv[1], msg);
+
+        listjobs(jobs);
+
 		return;
 	}
 
@@ -438,11 +443,13 @@ void sigtstp_handler(int sig)
 
 		// pass the SIGTSTP signal to the process group
 		Kill(fg_proc * -1, SIGTSTP);
+
 		printf("Job [%d] (%d) suspended by signal %d\n",
 				pid2jid(fg_proc), fg_proc, sig);
 		
-		// set the job as stopped
-		stop_job(jobs, fg_proc);
+		// set the job state as ST(stopped)
+		struct job_t *job = getjobpid(jobs, fg_proc);
+		job->state = ST;
 	}
 
 	return;
