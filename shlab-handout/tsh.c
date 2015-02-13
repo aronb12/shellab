@@ -311,24 +311,18 @@ void do_bgfg(char **argv)
 
 	// check if there is only one argument
 	if(argv[1] == NULL){
-		printf("%s command requires PID or %%jobid argument", argv[0]);
+		printf("%s command requires PID or %%jobid argument\n", argv[0]);
 		return;
 	}
 
 	// if the input was the process job id
 	if(argv[1][0] == '%'){
 		jid = atoi(argv[1] + 1);
-		// DEBUG
-		printf("\nJID: %d\n", jid);
-
 		job = getjobjid(jobs, jid);
 		msg = "job";
 	}
 	else{ // if input was process id
 		pid = atoi(argv[1]);
-		// DEBUG
-		printf("\nPID: %d\n", pid);
-
 		job = getjobpid(jobs, pid);
 		msg = "process";
 	}
