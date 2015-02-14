@@ -4,7 +4,7 @@
  * You __MUST__ add your user information here below
  * 
  * === User information ===
- * Group: Team Rocket
+ * Group: TeamRocket
  * User 1: arona12
  * SSN: 2106844339
  * User 2: sveinnt12
@@ -336,7 +336,14 @@ void do_bgfg(char **argv)
 
 	// if no job was found
 	if(job == NULL){
-		printf("%s: No such %s\n", argv[1], msg);
+
+		// reference solution wants paranthesis around process id
+		if(is_jid){
+			printf("%s: No such %s\n", argv[1], msg);
+		}
+		else{
+			printf("(%s): No such %s\n", argv[1], msg);
+		}
 		return;
 	}
 
@@ -424,11 +431,6 @@ void sigint_handler(int sig)
 
 		// pass the SIGINT signal to process group
 		Kill(fg_proc * -1, SIGINT);
-		// printf("Job [%d] (%d) terminated by signal %d\n",
-		// 		pid2jid(fg_proc), fg_proc, sig);
-		
-		// remove that process from the jobs array
-		// deletejob(jobs, fg_proc);
 	}
 
 	return;
@@ -449,13 +451,6 @@ void sigtstp_handler(int sig)
 
 		// pass the SIGTSTP signal to the process group
 		Kill(fg_proc * -1, SIGTSTP);
-
-		// printf("Job [%d] (%d) stopped by signal %d\n",
-		// 		pid2jid(fg_proc), fg_proc, sig);
-		
-		// // set the job state as ST(stopped)
-		// struct job_t *job = getjobpid(jobs, fg_proc);
-		// job->state = ST;
 	}
 
 	return;
