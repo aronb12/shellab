@@ -34,7 +34,7 @@
  ********************************************************/
 team_t team = {
     /* Group name */
-    "The Rowdyruff Boys",
+    "The_Rowdyruff_Boys",
     /* First member's full name */
     "Aron Bachmann Árnason",
     /* First member's email address */
