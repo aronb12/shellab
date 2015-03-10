@@ -117,7 +117,7 @@ team_t team = {
 
 /* Global variables */
 static char *heap_listp;  	/* pointer to first block */
-char *free_listp = NULL;	/* pointer to first free block */
+char *free_listp;	/* pointer to first free block */
 
 /* Prototypes for internal helper functions */
 static void *extend_heap(size_t words);
@@ -137,11 +137,13 @@ int mm_init(void)
     if ((heap_listp = mem_sbrk(4*WSIZE)) == (void *) -1){
        return -1;
     }
+
     PUT(heap_listp, 0);                             /* Alignment padding */
     PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1));  /* Prologue header */
     PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));  /* Prologue footer */
     PUT(heap_listp + (3 * WSIZE), PACK(0, 1));      /* Epilogue header */
     heap_listp += (2 * WSIZE);
+    free_listp = NULL;
 
     /* the initial heap is just one free block */
     // free_listp = heap_listp;
@@ -209,6 +211,8 @@ void mm_free(void *bp)
     
     PUT(HEADER(bp), PACK(size, 0));
     PUT(FOOTER(bp), PACK(size, 0));
+
+    free_block(bp);
     
     /* 
      *  TODO: 
@@ -225,6 +229,16 @@ void mm_free(void *bp)
  */
 void *mm_realloc(void *ptr, size_t size)
 {
+	if(ptr == NULL)
+	{
+		return mm_malloc(size);
+	}
+
+	if(size == 0)
+	{
+		mm_free(ptr);
+	}
+
     void *oldptr = ptr;
     void *newptr;
     size_t copySize;
@@ -256,16 +270,21 @@ static void *coalesce(void *bp)
         return bp;
     }
     
-    /* If prev block is allocated, update header and footer accordingly */
-    else if (prev_alloc && !next_alloc) {
+    /* If only prev block is allocated, update header and footer accordingly */
+    else if (!next_alloc) {
+        remove_free_block(NEXT_BP(bp));
+
         size += GET_SIZE(HEADER(NEXT_BP(bp)));
         PUT(HEADER(bp), PACK(size, 0));
         PUT(FOOTER(bp), PACK(size,0));
+
         return bp;
     }
     
-    /* If prev next is allocated, update header and footer accordingly */
-    else if (!prev_alloc && next_alloc) {
+    /* If only next is allocated, update header and footer accordingly */
+    else if (!prev_alloc) {
+        remove_free_block(bp);
+
         size += GET_SIZE(HEADER(PREV_BP(bp)));
         PUT(FOOTER(bp), PACK(size, 0));
         PUT(HEADER(PREV_BP(bp)), PACK(size, 0));
@@ -275,6 +294,9 @@ static void *coalesce(void *bp)
     
     /* If prev and next blocks are free, update header and footer accordingly */
     else {
+    	remove_free_block(bp);
+    	remove_free_block(NEXT_BP(bp));
+
         size += GET_SIZE(HEADER(PREV_BP(bp))) + GET_SIZE(FOOTER(NEXT_BP(bp)));
         PUT(HEADER(PREV_BP(bp)), PACK(size, 0));
         PUT(FOOTER(NEXT_BP(bp)), PACK(size, 0));
@@ -299,7 +321,7 @@ static void *extend_heap(size_t words)
         return NULL;
     }
 
-    add_free_block(bp);
+    free_block(bp);
 
     PUT(HEADER(NEXT_BP(bp)), PACK(0, 1)); /* new epilogue header */
  
@@ -313,14 +335,18 @@ static void *extend_heap(size_t words)
  */
 static void place(void *bp, size_t asize)
 {
+	remove_free_block(bp);
+
     size_t csize = GET_SIZE(HEADER(bp));
     if ((csize - asize) >= (2*DSIZE)) 
     {
         PUT(HEADER(bp), PACK(asize, 1));
         PUT(FOOTER(bp), PACK(asize, 1));
+
         bp = NEXT_BP(bp);
         PUT(HEADER(bp), PACK(csize-asize, 0));
         PUT(FOOTER(bp), PACK(csize-asize, 0));
+        free_block(bp);
     }
     else 
     {
@@ -336,13 +362,23 @@ static void *find_fit(size_t asize)
 {
     /* first fit search */
     void *bp;
- 
-    for (bp = heap_listp; GET_SIZE(HEADER(bp)) > 0; bp = NEXT_BP(bp)) {
-        if (!GET_ALLOC(HEADER(bp)) && (asize <= GET_SIZE(HEADER(bp)))) {
-            return bp;
-        }
+
+    for(bp = free_listp; bp != NULL; bp = NEXT_FREE(bp))
+    {
+    	if(GET_SIZE(HEADER(bp)) >= asize)
+    	{
+    		return bp;
+    	}
     }
+
     return NULL; /* no fit */
+
+    // for (bp = heap_listp; GET_SIZE(HEADER(bp)) > 0; bp = NEXT_BP(bp)) {
+    //     if (!GET_ALLOC(HEADER(bp)) && (asize <= GET_SIZE(HEADER(bp)))) {
+    //         return bp;
+    //     }
+    // }
+    // return NULL; /* no fit */
 }
 
 /*
@@ -351,13 +387,13 @@ static void *find_fit(size_t asize)
 static void free_block(void *bp)
 {
     /* Initialize free block header/FOOTER and the epilogue header */
-    PUT(HEADER(bp), PACK(size, 0));         /* free block header */
-    PUT(FOOTER(bp), PACK(size, 0));         /* free block FOOTER */
+    PUT(HEADER(bp), PACK(GET_SIZE(HEADER(bp)), 0));         /* free block header */
+    PUT(FOOTER(bp), PACK(GET_SIZE(HEADER(bp)), 0));         /* free block FOOTER */
 
     /* Add new block to FRONT of free explicit list */
     PUT(PREV_FREE(bp), NULL);				/* New block is in front */
-    PUT(NEXT_FREE(bp), *free_listp);		/* Next free block was first in list */
-    *free_listp = bp;						/* New free block is now first in list */
+    PUT(NEXT_FREE(bp), free_listp);		/* Next free block was first in list */
+    free_listp = bp;						/* New free block is now first in list */
 }
 
 /*
