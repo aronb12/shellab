@@ -1,14 +1,40 @@
 /*
  * mm-naive.c - The fastest, least memory-efficient malloc package.
  * 
- * In this naive approach, a block is allocated by simply incrementing
- * the brk pointer.  A block is pure payload. There are no headers or
- * footers.  Blocks are never coalesced or reused. Realloc is
- * implemented directly using mm_malloc and mm_free.
+ * In this approach, a block is allocated by selecting the first free
+ * block in the free explicit list that the block fits into. If no suitable
+ * free block is found then the brk pointer is simply incremented by the
+ * size of the new block.
  *
- * NOTE TO STUDENTS: Replace this header comment with your own header
- * comment that gives a high level description of your solution.
+ * All blocks contain a header whose value is both the size of the block
+ * as well the allocated bit(0 is block is free).
+ * Free blocks also contain two pointers, previous free block and next
+ * free block, that are used in the doubly linked explicit free list.
+ * 
+ * Whenever a block is freed, either by a call to free or when a selected
+ * free block is larger than the allocated block, it will be simply added
+ * to the front of the explicit free list unless the previous block is
+ * also free(see coalescing).
+ * 
+ * COALESCING:
+ * Previous block is free: Size of previous block is simply incremented by the size
+ * of the block to be freed, removing the freed block from the explicit free list
+ * is unnecessary as it has, at this point, not been added to the list in the
+ * first place.
  *
+ * Next block is free: Size of freed block is incremented by the size of
+ * the next block. Next block is then removed from the explicit free list
+ * and the new block added.
+ *
+ * Each block has a header and footer of the form:
+ * 
+ *   31                             ...3  2  1  0
+ *   ----------------------------------------------
+ *  | s  s  s                      ... s  s  s  a/f|
+ *   ----------------------------------------------
+ *
+ * where a/f is a single bit denoting if the block is allocated or not
+ * 
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +51,7 @@
  * struct that follows.
  *
  * === User information ===
- * Group: The Rowdyruff Boys
+ * Group: The_Rowdyruff_Boys
  * User 1: arona12
  * SSN: 2106844339
  * User 2: sveinnt12
@@ -77,6 +103,10 @@ team_t team = {
 #define NEXT_BP(bp)  ((char *)(bp) + GET_SIZE(((char *)(bp) - WSIZE)))
 #define PREV_BP(bp)  ((char *)(bp) - GET_SIZE(((char *)(bp) - DSIZE)))
 
+/* Given FREE block ptr bp, compute address of next and previous free blocks */
+#define NEXT_FREE(bp) ((char *)(bp) + WSIZE)
+#define PREV_FREE(bp) ((char *)(bp))
+
 /* single word (4) or double word (8) alignment */
 #define ALIGNMENT 8 
 /* rounds up to the nearest multiple of ALIGNMENT */
@@ -86,13 +116,16 @@ team_t team = {
 /* $end mallocmacros */
 
 /* Global variables */
-static char *heap_listp;  /* pointer to first block */ 
+static char *heap_listp;  	/* pointer to first block */
+char *free_listp = NULL;	/* pointer to first free block */
 
 /* Prototypes for internal helper functions */
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void place(void *bp, size_t asize);
 static void *find_fit(size_t asize);
+static void free_block(void *bp);
+static void remove_free_block(void *bp);
 
 
 /* 
@@ -109,6 +142,9 @@ int mm_init(void)
     PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));  /* Prologue footer */
     PUT(heap_listp + (3 * WSIZE), PACK(0, 1));      /* Epilogue header */
     heap_listp += (2 * WSIZE);
+
+    /* the initial heap is just one free block */
+    // free_listp = heap_listp;
  
     /* Extend the empty heap with a free block of CHUNKSIZE bytes */
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL){
@@ -262,10 +298,9 @@ static void *extend_heap(size_t words)
     if ((bp = mem_sbrk(size)) == (void *)-1) {
         return NULL;
     }
- 
-    /* Initialize free block header/FOOTER and the epilogue header */
-    PUT(HEADER(bp), PACK(size, 0));         /* free block header */
-    PUT(FOOTER(bp), PACK(size, 0));         /* free block FOOTER */
+
+    add_free_block(bp);
+
     PUT(HEADER(NEXT_BP(bp)), PACK(0, 1)); /* new epilogue header */
  
     /* Coalesce if the previous block was free */
@@ -308,4 +343,40 @@ static void *find_fit(size_t asize)
         }
     }
     return NULL; /* no fit */
+}
+
+/*
+ * free_block - Set block header/footer allocation bit to 0 and add block to free list
+ */
+static void free_block(void *bp)
+{
+    /* Initialize free block header/FOOTER and the epilogue header */
+    PUT(HEADER(bp), PACK(size, 0));         /* free block header */
+    PUT(FOOTER(bp), PACK(size, 0));         /* free block FOOTER */
+
+    /* Add new block to FRONT of free explicit list */
+    PUT(PREV_FREE(bp), NULL);				/* New block is in front */
+    PUT(NEXT_FREE(bp), *free_listp);		/* Next free block was first in list */
+    *free_listp = bp;						/* New free block is now first in list */
+}
+
+/*
+ * remove_free_block - Remove block from free list
+ */
+static void remove_free_block(void *bp)
+{
+	if(PREV_FREE(bp) == NULL)
+	{
+		free_listp = NEXT_FREE(bp);
+	}
+	else if(NEXT_FREE(bp) == NULL)
+	{
+		/* set the next pointer of previous block as null */
+		PUT(NEXT_FREE(PREV_FREE(bp)), NULL);
+	}
+	else
+	{
+		PUT(NEXT_FREE(PREV_FREE(bp)), NEXT_FREE(bp));
+		PUT(PREV_FREE(NEXT_FREE(bp)), PREV_FREE(bp));
+	}
 }
