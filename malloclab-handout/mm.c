@@ -275,7 +275,7 @@ static void *coalesce(void *bp)
     }
     
     /* If only prev block is allocated, update header and footer accordingly */
-    else if (!next_alloc) {
+    else if (!next_alloc && prev_alloc) {
         remove_free_list(NEXT_BP(bp));
 
         size += GET_SIZE(HEADER(NEXT_BP(bp)));
@@ -286,7 +286,7 @@ static void *coalesce(void *bp)
     }
     
     /* If only next is allocated, update header and footer accordingly */
-    else if (!prev_alloc) {
+    else if (next_alloc && !prev_alloc) {
         remove_free_list(bp);
 
         size += GET_SIZE(HEADER(PREV_BP(bp)));
@@ -370,7 +370,7 @@ static void *find_fit(size_t asize)
     /* first fit search */
     void *bp;
 
-    for(bp = free_listp; bp != NULL; bp = NEXT_FREE(bp))
+    for(bp = free_listp; bp != NULL; bp = GET(NEXT_FREE(bp)))
     {
     	if(GET_SIZE(HEADER(bp)) >= asize)
     	{
