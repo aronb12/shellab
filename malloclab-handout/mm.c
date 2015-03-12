@@ -28,13 +28,27 @@
  *
  * Each block has a header and footer of the form:
  * 
- *   31							 ...3  2  1  0
+ *   31                           ... 3  2  1  0
  *   ----------------------------------------------
- *  | s  s  s					  ... s  s  s  a/f|
+ *  | s  s  s                     ... s  s  s  a/f |
  *   ----------------------------------------------
  *
  * where a/f is a single bit denoting if the block is allocated or not
- * 
+ *
+ * Each allocated block is of the form:
+ *
+ *  ----------------------------------------------
+ * | HEADER |          CONTENT           | FOOTER |
+ *  ----------------------------------------------
+ *
+ * While each freed block is of the form:
+ *
+ *  ----------------------------------------------
+ * | HEADER | PREVIOUS | NEXT |          | FOOTER |
+ *  ----------------------------------------------
+ *
+ * where previous and next denote pointers in the doubly linked free
+ * explicit list.
  */
 #include <stdio.h>
 #include <stdlib.h>
