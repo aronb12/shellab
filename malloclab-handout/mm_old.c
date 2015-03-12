@@ -87,6 +87,7 @@ team_t team = {
 
 /* Global variables */
 static char *heap_listp;  /* pointer to first block */ 
+static char *last;
 
 /* Prototypes for internal helper functions */
 static void *extend_heap(size_t words);
@@ -109,7 +110,8 @@ int mm_init(void)
     PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));  /* Prologue footer */
     PUT(heap_listp + (3 * WSIZE), PACK(0, 1));      /* Epilogue header */
     heap_listp += (2 * WSIZE);
- 
+    last = heap_listp;
+
     /* Extend the empty heap with a free block of CHUNKSIZE bytes */
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL){
        return -1;
@@ -148,19 +150,6 @@ void *mm_malloc(size_t size)
         return NULL;
     place(bp, asize);
     return bp;
-
-    /*
-     * Original, given code. 
-     *
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    void *p = mem_sbrk(newsize);
-    if (p == (void *)-1)
-        return NULL;
-    else {
-        *(size_t *)p = size;
-        return (void *)((char *)p + SIZE_T_SIZE);
-    }
-    */
 }
 
 /*
@@ -173,14 +162,6 @@ void mm_free(void *bp)
     
     PUT(HEADER(bp), PACK(size, 0));
     PUT(FOOTER(bp), PACK(size, 0));
-    
-    /* 
-     *  TODO: 
-     *  Add some rules as to when coalescing should be done:
-     *  Every time a block is freed?
-     *  Coalesce all possible blocks when no sufficiently large free block is found?
-     */
-
     coalesce(bp);
 }
 
@@ -200,9 +181,9 @@ void *mm_realloc(void *ptr, size_t size)
     if (size < copySize){
         copySize = size;
     }
-    memcpy(newp, ptr, copySize);
+    memcpy(newptr, ptr, copySize);
     mm_free(ptr);
-    return newp;
+    return newptr;
 }
 
 /*
@@ -226,7 +207,7 @@ static void *coalesce(void *bp)
         size += GET_SIZE(HEADER(NEXT_BP(bp)));
         PUT(HEADER(bp), PACK(size, 0));
         PUT(FOOTER(bp), PACK(size,0));
-        return bp;
+        //return bp;
     }
     
     /* If prev next is allocated, update header and footer accordingly */
@@ -235,7 +216,7 @@ static void *coalesce(void *bp)
         PUT(FOOTER(bp), PACK(size, 0));
         PUT(HEADER(PREV_BP(bp)), PACK(size, 0));
         bp = PREV_BP(bp);
-        return bp;
+        //return bp;
     }
     
     /* If prev and next blocks are free, update header and footer accordingly */
@@ -244,8 +225,15 @@ static void *coalesce(void *bp)
         PUT(HEADER(PREV_BP(bp)), PACK(size, 0));
         PUT(FOOTER(NEXT_BP(bp)), PACK(size, 0));
         bp = PREV_BP(bp);
-        return bp;
+        //return bp;
     }
+
+    /* Ensure the 'last' pointer isn't pointing into a newly coalesced free block. */
+    if ((last > (char *)bp) && (last < NEXT_BP(bp)))
+    {
+        last = bp;
+    }
+    return bp;
 }
 
 /* 
@@ -300,13 +288,23 @@ static void place(void *bp, size_t asize)
  */
 static void *find_fit(size_t asize)
 {
-    /* first fit search */
-    void *bp;
- 
-    for (bp = heap_listp; GET_SIZE(HEADER(bp)) > 0; bp = NEXT_BP(bp)) {
-        if (!GET_ALLOC(HEADER(bp)) && (asize <= GET_SIZE(HEADER(bp)))) {
-            return bp;
+    char *lastfit = last;
+
+    for (; GET_SIZE(HEADER(last)) > 0; last = NEXT_BP(last))
+    {
+        if (!GET_ALLOC(HEADER(last)) && (asize <= GET_SIZE(HEADER(last))))
+        {
+            return last;
         }
     }
-    return NULL; /* no fit */
+
+    for (last = heap_listp; last < lastfit; last = NEXT_BP(last))
+    {
+        if (!GET_ALLOC(HEADER(last)) && (asize <= GET_SIZE(HEADER(last))))
+        {
+            return last;
+        }
+    }
+
+    return NULL;  /* no fit found */
 }
