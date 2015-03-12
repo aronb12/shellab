@@ -337,7 +337,7 @@ static void *extend_heap(size_t words)
 		return NULL;
 
 	PUT(HEADER(bp), PACK(size, 0));		 /* free block header */
-	PUT(FOOTER(bp), PACK(size, 0));		 /* free block FOOTER */
+	PUT(FOOTER(bp), PACK(size, 0));		 /* free block footer */
 
 	add_free_list(bp);
 
@@ -418,7 +418,9 @@ static void remove_free_list(void *bp)
 {
 	/* if bp is the only one in the free list */
 	if((GET(PREV_FREE(bp)) == NULL) && (GET(NEXT_FREE(bp)) == NULL))
-		free_listp = NULL;
+	{
+			free_listp = NULL;
+	}
 
 	/* if bp is the first in the free list */
 	else if(GET(PREV_FREE(bp)) == NULL)
