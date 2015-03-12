@@ -119,13 +119,17 @@ team_t team = {
 static char *heap_listp;  	/* pointer to first block */
 char *free_listp;	/* pointer to first free block */
 
+extern int verbose;
+
 /* Prototypes for internal helper functions */
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void place(void *bp, size_t asize);
 static void *find_fit(size_t asize);
 static void free_block(void *bp);
-static void remove_free_block(void *bp);
+static void add_free_list(void *bp);
+static void remove_free_list(void *bp);
+static void mm_checkheap(int verbose);
 
 
 /* 
@@ -272,7 +276,7 @@ static void *coalesce(void *bp)
     
     /* If only prev block is allocated, update header and footer accordingly */
     else if (!next_alloc) {
-        remove_free_block(NEXT_BP(bp));
+        remove_free_list(NEXT_BP(bp));
 
         size += GET_SIZE(HEADER(NEXT_BP(bp)));
         PUT(HEADER(bp), PACK(size, 0));
@@ -283,7 +287,7 @@ static void *coalesce(void *bp)
     
     /* If only next is allocated, update header and footer accordingly */
     else if (!prev_alloc) {
-        remove_free_block(bp);
+        remove_free_list(bp);
 
         size += GET_SIZE(HEADER(PREV_BP(bp)));
         PUT(FOOTER(bp), PACK(size, 0));
@@ -294,8 +298,8 @@ static void *coalesce(void *bp)
     
     /* If prev and next blocks are free, update header and footer accordingly */
     else {
-    	remove_free_block(bp);
-    	remove_free_block(NEXT_BP(bp));
+    	remove_free_list(bp);
+    	remove_free_list(NEXT_BP(bp));
 
         size += GET_SIZE(HEADER(PREV_BP(bp))) + GET_SIZE(FOOTER(NEXT_BP(bp)));
         PUT(HEADER(PREV_BP(bp)), PACK(size, 0));
@@ -321,7 +325,10 @@ static void *extend_heap(size_t words)
         return NULL;
     }
 
-    free_block(bp);
+    PUT(HEADER(bp), PACK(size, 0));         /* free block header */
+    PUT(FOOTER(bp), PACK(size, 0));         /* free block FOOTER */
+
+    add_free_list(bp);
 
     PUT(HEADER(NEXT_BP(bp)), PACK(0, 1)); /* new epilogue header */
  
@@ -335,7 +342,7 @@ static void *extend_heap(size_t words)
  */
 static void place(void *bp, size_t asize)
 {
-	remove_free_block(bp);
+	remove_free_list(bp);
 
     size_t csize = GET_SIZE(HEADER(bp));
     if ((csize - asize) >= (2*DSIZE)) 
@@ -390,6 +397,14 @@ static void free_block(void *bp)
     PUT(HEADER(bp), PACK(GET_SIZE(HEADER(bp)), 0));         /* free block header */
     PUT(FOOTER(bp), PACK(GET_SIZE(HEADER(bp)), 0));         /* free block FOOTER */
 
+    add_free_list(bp);
+}
+
+/*
+ * add_free_list - Add block to the free explicit list
+ */
+static void add_free_list(void *bp)
+{
     /* Add new block to FRONT of free explicit list */
     PUT(PREV_FREE(bp), NULL);				/* New block is in front */
     PUT(NEXT_FREE(bp), free_listp);		/* Next free block was first in list */
@@ -397,22 +412,47 @@ static void free_block(void *bp)
 }
 
 /*
- * remove_free_block - Remove block from free list
+ * remove_free_list - Remove block from free list
  */
-static void remove_free_block(void *bp)
+static void remove_free_list(void *bp)
 {
-	if(PREV_FREE(bp) == NULL)
+	if(GET(PREV_FREE(bp)) == NULL)
 	{
-		free_listp = NEXT_FREE(bp);
+		free_listp = GET(NEXT_FREE(bp));
 	}
-	else if(NEXT_FREE(bp) == NULL)
+	else if(GET(NEXT_FREE(bp)) == NULL)
 	{
 		/* set the next pointer of previous block as null */
 		PUT(NEXT_FREE(PREV_FREE(bp)), NULL);
 	}
 	else
 	{
-		PUT(NEXT_FREE(PREV_FREE(bp)), NEXT_FREE(bp));
-		PUT(PREV_FREE(NEXT_FREE(bp)), PREV_FREE(bp));
+		PUT(NEXT_FREE(PREV_FREE(bp)), GET(NEXT_FREE(bp)));
+		PUT(PREV_FREE(NEXT_FREE(bp)), GET(PREV_FREE(bp)));
 	}
 }
+
+// static void mm_checkheap(int verbose)
+// {
+// 	char *bp = heap_listp;
+// 	if(verbose)
+// 		printf("Heap (%p):\n", heap_listp);
+
+// 	if((GET_SIZE(HEADER(heap_listp)) != DSIZE) || !GET_ALLOC(HEADER(heap_listp)))
+// 		printf("Bad prolouge header\n");
+
+// 	checkblock(heap_listp);
+
+// 	for(bp = heap_listp; GET_SIZE(HEADER(bp)) > 0; bp = NEXT_BP(bp))
+// 	{
+// 		if(verbose)
+// 			printblock(bp);
+// 		checkblock(bp);
+// 	}
+
+// 	if(verbose)
+// 		printblock(bp);
+
+// 	if((GET_SIZE(HEADER(bp)) != 0) || !(GET_ALLOC(HEADER(bp))))
+// 		printf("Bad epilogue header\n");
+// }
