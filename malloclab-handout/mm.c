@@ -117,7 +117,7 @@ team_t team = {
 
 /* Global variables */
 static char *heap_listp;  	/* pointer to first block */
-char *free_listp;	/* pointer to first free block */
+char *free_listp;			/* pointer to first free block */
 
 extern int verbose;
 
@@ -137,21 +137,20 @@ static void mm_checkheap(int verbose);
 int mm_init(void)
 {
 	/* Create the initial empty heap */
-	if ((heap_listp = mem_sbrk(4*WSIZE)) == (void *) -1){
+	if ((heap_listp = mem_sbrk(4*WSIZE)) == (void *) -1)
 	   return -1;
-	}
 
-	PUT(heap_listp, 0);							 /* Alignment padding */
+	PUT(heap_listp, 0);							 	/* Alignment padding */
 	PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1));  /* Prologue header */
 	PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));  /* Prologue footer */
-	PUT(heap_listp + (3 * WSIZE), PACK(0, 1));	  /* Epilogue header */
+	PUT(heap_listp + (3 * WSIZE), PACK(0, 1));	  	/* Epilogue header */
 	heap_listp += (2 * WSIZE);
 	free_listp = NULL;
  
 	/* Extend the empty heap with a free block of CHUNKSIZE bytes */
-	if (extend_heap(CHUNKSIZE/WSIZE) == NULL){
+	if (extend_heap(CHUNKSIZE/WSIZE) == NULL)
 	   return -1;
-	}
+
 	return 0;
 }
 
@@ -161,8 +160,8 @@ int mm_init(void)
  */
 void *mm_malloc(size_t size)
 {
-	size_t asize; /* Adjusted block size */
-	size_t extendsize; /* Amount to extend heap if no fit */
+	size_t asize; 		/* Adjusted block size */
+	size_t extendsize;	/* Amount to extend heap if no fit */
 	char *bp;
 
 	/* Ignore spurious requests */
@@ -190,13 +189,12 @@ void *mm_malloc(size_t size)
 
 /*
  * mm_free - Free memory allocated for block bp.
- *
  */
 void mm_free(void *bp)
 {
 	size_t size = GET_SIZE(HEADER(bp));
 	
-	// set allocated bit in header and footer as 0
+	/* set allocated bit in header and footer as 0 */
 	PUT(HEADER(bp), PACK(size, 0));
 	PUT(FOOTER(bp), PACK(size, 0));
 
@@ -210,33 +208,37 @@ void mm_free(void *bp)
  */
 void *mm_realloc(void *ptr, size_t size)
 {
-	// if ptr is not defined, allocate new space in memory
+	void *newptr;
+	size_t copySize;
+	
+	/* If ptr is not defined, allocate new space in memory */
 	if(ptr == NULL)
-	{
 		return mm_malloc(size);
-	}
 
-	// if size is 0, free memory pointed to by ptr
+	/* If size is 0, free memory pointed to by ptr */
 	if(size == 0)
 	{
 		mm_free(ptr);
 		return ptr;
 	}
-
-	void *newptr;
-	size_t copySize;
- 
-	if ((newptr = mm_malloc(size)) == NULL) {
-		printf("ERROR: mm_malloc failed in mm_realloc\n");
-		exit(1);
+ 	
+ 	/* If reallocating fails the block is left unchanged */
+	if ((newptr = mm_malloc(size)) == NULL)
+	{
+		printf("ERROR: Fail in mm_realloc\n");
+		return 0;
 	}
 
 	copySize = GET_SIZE(HEADER(ptr));
-	if (size < copySize){
+
+	if (size < copySize)
 		copySize = size;
-	}
+
 	memcpy(newptr, ptr, copySize);
+	
+	/* Free old block */
 	mm_free(ptr);
+
 	return newptr;
 }
 
@@ -252,12 +254,12 @@ static void *coalesce(void *bp)
 	size_t size = GET_SIZE(HEADER(bp));
 	
 	/* If no coalescing can be performed */
-	if (prev_alloc && next_alloc) {
+	if (prev_alloc && next_alloc)
 		return bp;
-	}
 	
 	/* If only next block is free, update header and footer accordingly */
-	if (!next_alloc && prev_alloc) {
+	if (!next_alloc && prev_alloc) 
+	{
 		/* remove next block from free list as it is to be merged
 			with bp, thereby inheriting its header */
 		remove_free_list(NEXT_BP(bp));
@@ -269,11 +271,11 @@ static void *coalesce(void *bp)
 	}
 	
 	/* If only previous block is free, update header and footer accordingly */
-	else if (next_alloc && !prev_alloc) {
+	else if (next_alloc && !prev_alloc) 
+	{
 		/* remove bp from free list as it is to be merged
 			into the one in front of it */
 		remove_free_list(bp);
-
 
 		/* update header, footer and size of altered block */		
 		size += GET_SIZE(HEADER(PREV_BP(bp)));
@@ -285,7 +287,8 @@ static void *coalesce(void *bp)
 	}
 	
 	/* If prev and next blocks are free, update header and footer accordingly */
-	else {
+	else 
+	{
 		/*
 		 * both current and next blocks in heap are to be merged into
 		 * the one in front of bp
@@ -316,9 +319,8 @@ static void *extend_heap(size_t words)
 	 
 	/* Allocate an even number of words to maintain alignment */
 	size = (words % 2) ? (words+1) * WSIZE : words * WSIZE;
-	if ((bp = mem_sbrk(size)) == (void *)-1) {
+	if ((bp = mem_sbrk(size)) == (void *)-1) 
 		return NULL;
-	}
 
 	PUT(HEADER(bp), PACK(size, 0));		 /* free block header */
 	PUT(FOOTER(bp), PACK(size, 0));		 /* free block FOOTER */
@@ -372,12 +374,8 @@ static void *find_fit(size_t asize)
 	void *bp;
 
 	for(bp = free_listp; bp != NULL; bp = GET(NEXT_FREE(bp)))
-	{
 		if(GET_SIZE(HEADER(bp)) >= asize)
-		{
 			return bp;
-		}
-	}
 
 	return NULL;
 }
@@ -406,9 +404,7 @@ static void remove_free_list(void *bp)
 {
 	/* if bp is the only one in the free list */
 	if((GET(PREV_FREE(bp)) == NULL) && (GET(NEXT_FREE(bp)) == NULL))
-	{
 		free_listp = NULL;
-	}
 
 	/* if bp is the first in the free list */
 	else if(GET(PREV_FREE(bp)) == NULL)
