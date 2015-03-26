@@ -19,6 +19,8 @@
  * === End User Information ===
  ********************************************************/
 
+ static void *barber_work(void *arg);
+
 struct chairs
 {
 	struct customer **customer; /* Array of customers */
@@ -130,7 +132,7 @@ static void *barber_work(void *arg)
 	   thrlab_prepare_customer(customer, barber->room);
 	   sem_post(&chairs->mutext);       
        sem_post(&chairs->chair);
-       
+
        thrlab_sleep(5 * (customer->hair_length - customer->hair_goal));
 	   thrlab_dismiss_customer(customer, barber->room);
 	   
