@@ -102,7 +102,7 @@ static void customer_arrived(struct customer *customer, void *arg)
     sem_init(&customer->mutex, 0, 0);
 
     /* TODO: Accept if there is an available chair */
-    sem_wait(&chairs->chairs);
+    sem_wait(&chairs->chair);
     sem_wait(&chairs->mutex);
     thrlab_accept_customer(customer);
     chairs->customer[0] = customer;
@@ -130,7 +130,7 @@ static void *barber_work(void *arg)
        sem_wait(&chairs->mutex);
        customer = chairs->customer[0]; /* TODO: You must choose the customer */
 	   thrlab_prepare_customer(customer, barber->room);
-	   sem_post(&chairs->mutext);       
+	   sem_post(&chairs->mutex);       
        sem_post(&chairs->chair);
 
        thrlab_sleep(5 * (customer->hair_length - customer->hair_goal));
