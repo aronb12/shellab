@@ -26,7 +26,9 @@ struct chairs
 	struct customer **customer; /* Array of customers */
 	int max;
 	sem_t mutex;
+	// semaphore for waiting chair
 	sem_t chair;
+	// semaphore to see if barber can start
 	sem_t barber;
 	/* TODO: Add more variables related to threads */
 	/* Hint: Think of the consumer producer thread problem */
@@ -52,11 +54,15 @@ struct simulator
 static void setup(struct simulator *simulator)
 {
 	struct chairs *chairs = &simulator->chairs;
+
 	/* Setup semaphores*/
 	chairs->max = thrlab_get_num_chairs();
 
+	// only one customer can get a haircut at a time
 	sem_init(&chairs->mutex, 0, 1);
+	// 1 == there is an available chair to start
 	sem_init(&chairs->chair, 0, 1);
+	// 0 == a barber can't start without a customer
 	sem_init(&chairs->barber, 0, 0);
 
 	/* Create chairs*/
@@ -100,20 +106,28 @@ static void customer_arrived(struct customer *customer, void *arg)
 	struct simulator *simulator = arg;
 	struct chairs *chairs = &simulator->chairs;
 
+	// Customer mutex starts as 0
 	sem_init(&customer->mutex, 0, 0);
 
 	/* TODO: Accept if there is an available chair */
+	// wait for a chair to be available
 	if(sem_wait(&chairs->chair) < 0)
 	{
 		/* TODO: Reject if there are no available chairs */
 		thrlab_reject_customer(customer);
 	}
+	// else accepted
 
 	//sem_wait(&chairs->chair);
-	sem_wait(&chairs->mutex);
+	// if another customer (A) arrives when another customer is getting his hair cut
+	// accept A
 	thrlab_accept_customer(customer);
+	
+	// put A into waiting chair 0
+	// Vantar virkni, tekur alltaf úr stól 0. yfirskrifar alltaf þegar nýr kemur
 	chairs->customer[0] = customer;
 	sem_post(&chairs->mutex);
+	// barber can start cutting hair
 	sem_post(&chairs->barber);
 	sem_wait(&customer->mutex);
 
@@ -129,18 +143,23 @@ static void *barber_work(void *arg)
 	while (true)
 	{
 		/* TODO: Here you must add you semaphores and locking logic */
-
+		// barber waits for his semaphore to increment
 		sem_wait(&chairs->barber);
 
 		sem_wait(&chairs->mutex);
+		// fetch customer
 		customer = chairs->customer[0]; /* TODO: You must choose the customer */
+		// take customer from waiting room and put in chair 
 		thrlab_prepare_customer(customer, barber->room);
 		sem_post(&chairs->mutex);
-		sem_post(&chairs->chair);
-
-		thrlab_sleep(5 * (customer->hair_length - customer->hair_goal));
-		thrlab_dismiss_customer(customer, barber->room);
 		
+		// make chair in waiting room available
+		sem_post(&chairs->chair);
+		// Cut hair
+		thrlab_sleep(5 * (customer->hair_length - customer->hair_goal));
+		// take customer out of shop
+		thrlab_dismiss_customer(customer, barber->room);
+		// customer can leave barber shop
 		sem_post(&customer->mutex);
 	}
 	return NULL;
