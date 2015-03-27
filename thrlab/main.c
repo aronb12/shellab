@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdbool.h>
@@ -19,7 +20,32 @@
  * === End User Information ===
  ********************************************************/
 
- static void *barber_work(void *arg);
+static void *barber_work(void *arg);
+
+/*********************************************************
+	Wrapper functions definitions
+ ********************************************************/
+
+void unix_error(char *msg);
+
+// Thread control
+void posix_error(int code, char *msg);
+
+void Pthread_create(pthread_t *tidp, pthread_attr_t *attrp, void * (*routine)(void *), void *argp);
+
+void Pthread_detach(pthread_t tid);
+
+// Semaphores
+
+void Sem_init(sem_t *sem, int pshared, unsigned int value);
+
+void P(sem_t *sem);
+
+void V(sem_t *sem);
+
+/*********************************************************
+	End of wrapper functions definitions
+ ********************************************************/
 
 struct chairs
 {
@@ -59,11 +85,14 @@ static void setup(struct simulator *simulator)
 	chairs->max = thrlab_get_num_chairs();
 
 	// only one customer can get a haircut at a time
-	sem_init(&chairs->mutex, 0, 1);
+	Sem_init(&chairs->mutex, 0, 1);
+	// sem_init(&chairs->mutex, 0, 1);
 	// 1 == there is an available chair to start
-	sem_init(&chairs->chair, 0, 1);
+	Sem_init(&chairs->chair, 0, 1);
+	// sem_init(&chairs->chair, 0, 1);
 	// 0 == a barber can't start without a customer
-	sem_init(&chairs->barber, 0, 0);
+	Sem_init(&chairs->barber, 0, 0);
+	// sem_init(&chairs->barber, 0, 0);
 
 	/* Create chairs*/
 	chairs->customer = malloc(sizeof(struct customer *) * thrlab_get_num_chairs());
@@ -80,8 +109,12 @@ static void setup(struct simulator *simulator)
 		barber->room = i;
 		barber->simulator = simulator;
 		simulator->barber[i] = barber;
-		pthread_create(&simulator->barberThread[i], 0, barber_work, barber);
-		pthread_detach(simulator->barberThread[i]);
+
+		Pthread_create(&simulator->barberThread[i], 0, barber_work, barber);
+		Pthread_detach(simulator->barberThread[i]);
+
+		// pthread_create(&simulator->barberThread[i], 0, barber_work, barber);
+		// pthread_detach(simulator->barberThread[i]);
 	}
 }
 
@@ -107,7 +140,8 @@ static void customer_arrived(struct customer *customer, void *arg)
 	struct chairs *chairs = &simulator->chairs;
 
 	// Customer mutex starts as 0
-	sem_init(&customer->mutex, 0, 0);
+	Sem_init(&customer->mutex, 0, 0);
+	// sem_init(&customer->mutex, 0, 0);
 
 	/* TODO: Accept if there is an available chair */
 	// wait for a chair to be available
@@ -126,10 +160,15 @@ static void customer_arrived(struct customer *customer, void *arg)
 	// put A into waiting chair 0
 	// Vantar virkni, tekur alltaf úr stól 0. yfirskrifar alltaf þegar nýr kemur
 	chairs->customer[0] = customer;
-	sem_post(&chairs->mutex);
+
+	// sem_post(&chairs->mutex);
+	V(&chairs->mutex);
+
 	// barber can start cutting hair
-	sem_post(&chairs->barber);
-	sem_wait(&customer->mutex);
+	V(&chairs->barber);
+	P(&customer->mutex);
+	// sem_post(&chairs->barber);
+	// sem_wait(&customer->mutex);
 
 }
 
@@ -144,23 +183,28 @@ static void *barber_work(void *arg)
 	{
 		/* TODO: Here you must add you semaphores and locking logic */
 		// barber waits for his semaphore to increment
-		sem_wait(&chairs->barber);
+		P(&chairs->barber);
+		// sem_wait(&chairs->barber);
 
-		sem_wait(&chairs->mutex);
+		P(&chairs->mutex);
+		// sem_wait(&chairs->mutex);
 		// fetch customer
 		customer = chairs->customer[0]; /* TODO: You must choose the customer */
 		// take customer from waiting room and put in chair 
 		thrlab_prepare_customer(customer, barber->room);
-		sem_post(&chairs->mutex);
+		V(&chairs->mutex);
+		// sem_post(&chairs->mutex);
 		
 		// make chair in waiting room available
-		sem_post(&chairs->chair);
+		V(&chairs->chair);
+		// sem_post(&chairs->chair);
 		// Cut hair
 		thrlab_sleep(5 * (customer->hair_length - customer->hair_goal));
 		// take customer out of shop
 		thrlab_dismiss_customer(customer, barber->room);
 		// customer can leave barber shop
-		sem_post(&customer->mutex);
+		V(&customer->mutex);
+		// sem_post(&customer->mutex);
 	}
 	return NULL;
 }
@@ -179,3 +223,59 @@ int main (int argc, char **argv)
 
 	return EXIT_SUCCESS;
 }
+
+/*********************************************************
+	Wrapper functions implementations
+ ********************************************************/
+
+void unix_error(char *msg)
+{
+	fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+	exit(0);
+}
+
+// Thread control
+void posix_error(int code, char *msg)
+{
+	fprintf(stderr, "%s: %s\n", msg, strerror(code));
+	exit(0);
+}
+
+void Pthread_create(pthread_t *tidp, pthread_attr_t *attrp, void * (*routine)(void *), void *argp)
+{
+	int rc;
+
+	if ((rc = pthread_create(tidp, attrp, routine, argp)) != 0)
+		posix_error(rc, "Pthread_create error");
+}
+
+void Pthread_detach(pthread_t tid)
+{
+	int rc;
+
+	if ((rc = pthread_detach(tid)) != 0)
+		posix_error(rc, "Pthread_detach error");
+}
+
+// Semaphores
+void Sem_init(sem_t *sem, int pshared, unsigned int value)
+{
+	if (sem_init(sem, pshared, value) < 0)
+		unix_error("Sem_init error");
+}
+
+void P(sem_t *sem)
+{
+	if (sem_wait(sem) < 0)
+		unix_error("P error");
+}
+
+void V(sem_t *sem)
+{
+	if (sem_post(sem) < 0)
+		unix_error("V error");
+}
+
+/*********************************************************
+	End of wrapper functions implementations
+ ********************************************************/
