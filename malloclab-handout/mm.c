@@ -419,7 +419,7 @@ static void remove_free_list(void *bp)
 	/* if bp is the only one in the free list */
 	if((GET(PREV_FREE(bp)) == NULL) && (GET(NEXT_FREE(bp)) == NULL))
 	{
-			free_listp = NULL;
+		free_listp = NULL;
 	}
 
 	/* if bp is the first in the free list */
